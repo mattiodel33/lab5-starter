@@ -11,8 +11,16 @@ void handle_404(int client_sock, char *path)  {
     // snprintf includes a null-terminator
 
     // TODO: send response back to client?
+    write(client_sock, "HTTP/1.1 404 you sussy baka\r\nContent-Type: text/plain\r\n\r\n", 54);
 }
+void handle200(int client_sock, char *path){
+	printf("SERVER LOG: Got request for recognized path \"%s\"\n", path);
 
+	char response_buff[BUFFER_SIZE];
+	snprintf(response_buff, BUFFER_SIZE, "200:\r\nRecognized path \"%s\"\r\n", path);
+
+	write(client_sock, "HTTP/1.1 200 WOOHOO\r\nContent-Type: text/plain\r\n\r\n", 46);
+}
 
 void handle_response(char *request, int client_sock) {
     char path[256];
@@ -23,6 +31,18 @@ void handle_response(char *request, int client_sock) {
     if (sscanf(request, "GET %255s", path) != 1) {
         printf("Invalid request line\n");
         return;
+    }
+
+    if (strstr(path, "/shownum") != path[strlen(path)]){
+	    handle200(client_sock, path);
+	    write(client_sock, "Your number is ", 15);
+	    write(client_sock, num, 4);
+    }
+    else if (strstr(path, "/increment") != path[strlen(path)]){
+	    handle200(client_sock, path);
+    }
+    else if (strstr(path, "/add?value=") < path[strlen(path)]){
+	    handle200(client_sock, path);
     }
 
     handle_404(client_sock, path);

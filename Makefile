@@ -1,9 +1,9 @@
-all: test
+all: chat-server
 
-test: http-server.c number-server.c
-	gcc -std=c11 -Wall -Wno-unused-variable -fsanitize=address -g http-server.c number-server.c -o test
+chat-server: http-server.c number-server.c
+	gcc -std=c11 -Wall -Wno-unused-variable -fsanitize=address -g http-server.c number-server.c -o chat-server
 
 clean:
-	rm -f test
+	rm -f chat-server
 
 

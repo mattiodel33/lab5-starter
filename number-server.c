@@ -55,7 +55,7 @@ void handle_404(int client_sock, char *path)  {
     // snprintf includes a null-terminator
 
     // TODO: send response back to client?
-    write(client_sock, HTTP_404_NOT_FOUND, strlen(HTTP_404_NOT_FOUND);
+    write(client_sock, HTTP_404_NOT_FOUND, strlen(HTTP_404_NOT_FOUND));
     write(client_sock, response_buff, strlen(response_buff));
 }
 void handle400(int client_sock, char *path){
@@ -75,42 +75,6 @@ void handle200(int client_sock, char *path){
 
 	write(client_sock, HTTP_200_OK, strlen(HTTP_200_OK));
 	write(client_sock, response_buff, strlen(response_buff));
-}
-
-void handle_response(char *request, int client_sock) {
-    char path[256];
-
-    printf("\nSERVER LOG: Got request: \"%s\"\n", request);
-
-    // Parse the path out of the request line (limit buffer size; sscanf null-terminates)
-    if (sscanf(request, "GET %255s", path) != 1) {
-        printf("Invalid request line\n");
-	char response[] = "Invalid request line \n";
-	write(client_sock, response, strlen(response));
-        return;
-    }
-
-    if (strstr(path, "/post") != NULL){
-
-	    handle200(client_sock, path);
-	    return;
-    }
-    else if (strstr(path, "/react") != NULL){
-	    handle200(client_sock, path);
-	    return;
-    }
-    else if (strstr(path, "/chats") != NULL){
-	    if(
-	    handle200(client_sock, path);
-	    return;
-    }
-    else if (strstr(path, "/reset") != NULL){
-	    reset();
-	    handle200(client_sock, path);
-	    return;
-    }
-
-    handle_404(client_sock, path);
 }
 
 uint8_t add_chat(char* username, char* message){
@@ -184,29 +148,174 @@ void reset(){
 	}
 }
 
+void handlepath(char* path){
+	int i = 0;
+	for (; i < strlen(path); i++){
+		if (path[i] == '%'){
+			path[i] = hex(path[i] + 1, path[i] + 2);
+			int j = i + 1;
+			for (; j < strlen(path) - 2; j++){
+				path[j] = path[j + 2];
+			}
+			path[strlen(path) - 2] = 0;
+		}
+	}
+	return;
+}
+
+void respond_with_chats(char* path, int client){
+	int i = 1;
+	for (; i < currId; i++){
+		struct Chat* chat = messages[i];
+		char buff[500];
+		snprintf(buff, 475, "[#%d %s]     %s: %s\r\n", (*chat).id, (*chat).timestamp, (*chat).user, (*chat).message);
+		write(client, buff, strlen(buff));
+
+		int j = 0;
+		for (; j < (*chat).num_reactions; j++){
+			struct Reaction* rxn = (*chat).reactions[j];
+			char buff2[150];
+			snprintf(buff2, 125, "                      (%s)     %s\r\n", (*rxn).user, (*rxn).message);
+		}
+	}
+}
+
+void handle_post(char* path, int client){
+	handlepath(path);
+	char* start = strstr(path, "?");
+	char* end = strstr(path, " HTTP/1.1");
+	if (start == NULL || end == NULL){
+		handle400(client, path);
+		return;
+	}
+	start++;
+
+	char* userp = strstr(start, "user=");
+	char* msgp = strstr(userp, "message=");
+	char* andp = strstr(userp, "&");
+	if (userp == NULL || msgp == NULL || andp == NULL){
+		handle400(client, path);
+		return;
+	}
+	if (userp > msgp || andp < userp || andp != msgp - 1){
+		handle400(client, path);
+		return;
+	}
+	userp += 5;
+	msgp += 8;
+	char user[64];
+	char message[256];
+
+	int i = 0;
+	for (; i < andp - userp && i < 64; i++){
+		user[i] = userp[i];
+	}
+	i = 0;
+	for (; i < end - msgp && i < 256; i++){
+		message[i] = msgp[i];
+	}
+	handle200(client, path);
+	add_chat(user, message);
+	respond_with_chats(path, client);
+}
+
+void handle_reaction(char* path, int client){
+	handlepath(path);
+	char* start = strstr(path, "?");
+	char* end = strstr(path, " HTTP/1.1");
+	if (start == NULL || end == NULL){
+		handle400(client, path);
+		return;
+	}
+	start++;
+
+	char* userp = strstr(start, "user=");
+	char* and1 = strstr(userp, "&");
+	char* msgp = strstr(and1, "message=");
+	char* and2 = strstr(msgp, "&");
+	char* idp = strstr(and2, "id=");
+
+	if (userp == NULL || and1 == NULL || msgp == NULL || and2 == NULL || idp == NULL || end < idp){
+		handle400(client, path);
+		return;
+	}
+	userp += 5;
+	msgp += 8;
+	idp += 3;
+	char user[64];
+	char message[256];
+	char id[10];
+	
+	int i = 0;
+	for (; i < and1 - userp && i < 64; i++){
+		user[i] = userp[i];
+	}
+	i = 0;
+	for (; i < and2 - msgp && i < 256; i++){
+		message[i] = msgp[i];
+	}
+	i = 0;
+	for (; i < end - idp && i < 10; i++){
+		id[i] = idp[i];
+	}
+	handle200(client, path);
+	add_reaction(user, message, id);
+	respond_with_chats(path, client);
+}
+
+
+void handle_response(char *request, int client_sock) {
+    char path[256];
+
+    printf("\nSERVER LOG: Got request: \"%s\"\n", request);
+
+    // Parse the path out of the request line (limit buffer size; sscanf null-terminates)
+    if (sscanf(request, "GET %255s", path) != 1) {
+        printf("Invalid request line\n");
+	char response[] = "Invalid request line \n";
+	write(client_sock, response, strlen(response));
+        return;
+    }
+
+    if (strlen(path) > 1000){
+	    handle_404(client_sock, path);
+	    return;
+    }
+
+    if (strstr(path, "/post") == path){
+	    handle_post(path, client_sock);
+	    return;
+    }
+    else if (strstr(path, "/react") == path){
+	    handle_reaction(path, client_sock);
+	    return;
+    }
+    else if (strstr(path, "/chats") == path){
+	    if (strstr(path, " HTTP/1.1") != path + 6){
+		    handle400(client_sock, path);
+		    return;
+	    }
+	    handle200(client_sock, path);
+	    respond_with_chats(path, client_sock);
+	    return;
+    }
+    else if (strstr(path, "/reset") == path){
+	    if (strstr(path, " HTTP/1.1") != path + 5){
+		    handle400(client_sock, path);
+		    return;
+	    }
+	    handle200(client_sock, path);
+	    reset();
+	    return;
+    }
+
+    handle_404(client_sock, path);
+}
+
 int main(int argc, char *argv[]) {
 	int port = 0;
 	if(argc >= 2) { // if called with a port number, use that
 		port = atoi(argv[1]);
-	}
-	if (1){
-		char user[] = "bus";
-		char msg[] = "sup bozo";
-		char num[] = "1";
-		add_chat(user, msg);
-		struct Chat* chat = messages[1];
-	
-		add_reaction(msg, user, num);
-	
-		struct Reaction* rxn = (*chat).reactions[0];
-	
-		printf("%d %s %s %s %d %s", (*chat).id, (*chat).user, (*chat).message, (*chat).timestamp, (*chat).num_reactions, (*rxn).user);
-
-		int* ptr = malloc(10);
-
-		reset();
-		
-		return 0;
 	}
 
 	start_server(&handle_response, port);

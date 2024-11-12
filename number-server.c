@@ -165,7 +165,7 @@ void handlepath(char* path){
 
 void respond_with_chats(char* path, int client){
 	int i = 1;
-	for (; i < currId; i++){
+	for (; i <= currId; i++){
 		struct Chat* chat = messages[i];
 		char buff[500];
 		snprintf(buff, 475, "[#%d %s]     %s: %s\r\n", (*chat).id, (*chat).timestamp, (*chat).user, (*chat).message);
@@ -183,8 +183,7 @@ void respond_with_chats(char* path, int client){
 void handle_post(char* path, int client){
 	handlepath(path);
 	char* start = strstr(path, "?");
-	char* end = strstr(path, " HTTP/1.1");
-	if (start == NULL || end == NULL){
+	if (start == NULL){
 		handle400(client, path);
 		return;
 	}
@@ -211,19 +210,18 @@ void handle_post(char* path, int client){
 		user[i] = userp[i];
 	}
 	i = 0;
-	for (; i < end - msgp && i < 256; i++){
+	for (; i < &path[strlen(path)] - msgp && i < 256; i++){
 		message[i] = msgp[i];
 	}
-	handle200(client, path);
 	add_chat(user, message);
 	respond_with_chats(path, client);
+	//handle200(client, path);
 }
 
 void handle_reaction(char* path, int client){
 	handlepath(path);
 	char* start = strstr(path, "?");
-	char* end = strstr(path, " HTTP/1.1");
-	if (start == NULL || end == NULL){
+	if (start == NULL){
 		handle400(client, path);
 		return;
 	}
@@ -235,7 +233,7 @@ void handle_reaction(char* path, int client){
 	char* and2 = strstr(msgp, "&");
 	char* idp = strstr(and2, "id=");
 
-	if (userp == NULL || and1 == NULL || msgp == NULL || and2 == NULL || idp == NULL || end < idp){
+	if (userp == NULL || and1 == NULL || msgp == NULL || and2 == NULL || idp == NULL){
 		handle400(client, path);
 		return;
 	}
@@ -255,12 +253,12 @@ void handle_reaction(char* path, int client){
 		message[i] = msgp[i];
 	}
 	i = 0;
-	for (; i < end - idp && i < 10; i++){
+	for (; i < &path[strlen(path)] - idp && i < 10; i++){
 		id[i] = idp[i];
 	}
-	handle200(client, path);
 	add_reaction(user, message, id);
 	respond_with_chats(path, client);
+	//handle200(client, path);
 }
 
 
@@ -291,21 +289,21 @@ void handle_response(char *request, int client_sock) {
 	    return;
     }
     else if (strstr(path, "/chats") == path){
-	    if (strstr(path, " HTTP/1.1") != path + 6){
+	    if (strlen(path) != 6){
 		    handle400(client_sock, path);
 		    return;
 	    }
-	    handle200(client_sock, path);
 	    respond_with_chats(path, client_sock);
+	    //handle200(client_sock, path);
 	    return;
     }
     else if (strstr(path, "/reset") == path){
-	    if (strstr(path, " HTTP/1.1") != path + 5){
+	    if (strlen(path) != 6){
 		    handle400(client_sock, path);
 		    return;
 	    }
-	    handle200(client_sock, path);
 	    reset();
+	    //handle200(client_sock, path);
 	    return;
     }
 

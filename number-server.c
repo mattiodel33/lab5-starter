@@ -394,7 +394,7 @@ void handle_response(char *request, int client_sock) {
 	    return;
     }
     else if (strstr(path, "/edit") == path){
-	    handle_edit(path, client_sock);
+	    //handle_edit(path, client_sock);
 	    return;
     }
 

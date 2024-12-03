@@ -226,7 +226,7 @@ void handle_reaction(char* path, int client){
 	handlepath(path);
 	char* start = strstr(path, "?");
 	if (start == NULL){
-		//handle400(client, path);
+		handle400(client, path);
 		return;
 	}
 	start++;
@@ -267,7 +267,7 @@ void handle_reaction(char* path, int client){
 		respond_with_chats(path, client);
 	}
 	else{
-		handle400(client, path);
+		//handle400(client, path);
 	}
 	//handle200(client, path);
 }

@@ -337,13 +337,13 @@ void handle_edit(char* path, int client){
 		return;
 	}
 
-	uint8_t t = edit(id, message);
+	/*uint8_t t = edit(id, message);
 	if (t == 1){
 		respond_with_chats(path, client);
 	}
 	else if (t == 0){
 		handle400(client, path);
-	}
+	}*/
 	return;
 }
 
@@ -394,7 +394,7 @@ void handle_response(char *request, int client_sock) {
 	    return;
     }
     else if (strstr(path, "/edit") == path){
-	    //handle_edit(path, client_sock);
+	    handle_edit(path, client_sock);
 	    return;
     }
 

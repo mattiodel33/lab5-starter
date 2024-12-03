@@ -27,7 +27,7 @@ int hex(char c1, char c2){
 		ret += (c2 - 'a' + 10);
 	}
 	else{
-		ret += (c2 - '0')*16;
+		ret += (c2 - '0');
 	}
 	return ret;
 }
@@ -146,13 +146,14 @@ void reset(){
 		
 		free(chat);
 	}
+	currId = 0;
 }
 
 void handlepath(char* path){
 	int i = 0;
 	for (; i < strlen(path); i++){
 		if (path[i] == '%'){
-			path[i] = hex(path[i] + 1, path[i] + 2);
+			path[i] = hex(path[i + 1], path[i + 2]);
 			int j = i + 1;
 			for (; j < strlen(path) - 2; j++){
 				path[j] = path[j + 2];
@@ -176,6 +177,7 @@ void respond_with_chats(char* path, int client){
 			struct Reaction* rxn = (*chat).reactions[j];
 			char buff2[150];
 			snprintf(buff2, 125, "                      (%s)     %s\r\n", (*rxn).user, (*rxn).message);
+			write(client, buff2, strlen(buff2));
 		}
 	}
 }
@@ -209,10 +211,12 @@ void handle_post(char* path, int client){
 	for (; i < andp - userp && i < 64; i++){
 		user[i] = userp[i];
 	}
+	user[i] = 0;
 	i = 0;
 	for (; i < &path[strlen(path)] - msgp && i < 256; i++){
 		message[i] = msgp[i];
 	}
+	message[i] = 0;
 	add_chat(user, message);
 	respond_with_chats(path, client);
 	//handle200(client, path);
@@ -248,16 +252,23 @@ void handle_reaction(char* path, int client){
 	for (; i < and1 - userp && i < 64; i++){
 		user[i] = userp[i];
 	}
+	user[i] = 0;
 	i = 0;
 	for (; i < and2 - msgp && i < 256; i++){
 		message[i] = msgp[i];
 	}
+	message[i] = 0;
 	i = 0;
 	for (; i < &path[strlen(path)] - idp && i < 10; i++){
 		id[i] = idp[i];
 	}
-	add_reaction(user, message, id);
-	respond_with_chats(path, client);
+	id[i] = 0;
+	if(add_reaction(user, message, id)){
+		respond_with_chats(path, client);
+	}
+	else{
+		handle400(client, path);
+	}
 	//handle200(client, path);
 }
 

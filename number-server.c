@@ -219,7 +219,7 @@ void handle_post(char* path, int client){
 	message[i] = 0;
 	add_chat(user, message);
 	respond_with_chats(path, client);
-	//handle200(client, path);
+	handle200(client, path);
 }
 
 void handle_reaction(char* path, int client){
@@ -267,7 +267,7 @@ void handle_reaction(char* path, int client){
 		respond_with_chats(path, client);
 	}
 	else{
-		//handle400(client, path);
+		handle400(client, path);
 	}
 	//handle200(client, path);
 }

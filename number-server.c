@@ -42,7 +42,7 @@ struct Chat{
 	char message[256];
 	char timestamp[100];
 	uint8_t num_reactions;
-	struct Reaction* reactions[20];
+	struct Reaction* reactions[101];
 };
 
 struct Chat* messages[1000];
@@ -79,8 +79,8 @@ void handle200(int client_sock, char *path){
 
 uint8_t add_chat(char* username, char* message){
 	currId++;
-	if (currId > 999){
-		return 0;
+	if (currId > 100000){
+		return 2;
 	}
 
 	time_t now = time(NULL);
@@ -97,8 +97,8 @@ uint8_t add_chat(char* username, char* message){
 
 	struct Chat* chatp = malloc(sizeof(struct Chat)*2);
 	(*chatp).id = currId;
-	memcpy((*chatp).user, username, strlen(username));
-	memcpy((*chatp).message, message, strlen(message));
+	memcpy((*chatp).user, username, strlen(username) + 1);
+	memcpy((*chatp).message, message, strlen(message) + 1);
 	memcpy((*chatp).timestamp, buffer, strlen(buffer));
 	(*chatp).num_reactions = 0;
 
@@ -113,8 +113,8 @@ uint8_t add_reaction(char* username, char* message, char* id){
 		return 0;
 	}
 	struct Chat* chat = messages[num];
-	if ((*chat).num_reactions > 19){
-		return 0;
+	if ((*chat).num_reactions > 100){
+		return 2;
 	}
 	
 	if (strlen(username) > 64){
@@ -125,12 +125,22 @@ uint8_t add_reaction(char* username, char* message, char* id){
 	}
 
 	struct Reaction* reaction = malloc(sizeof(struct Reaction)*2);
-	memcpy((*reaction).user, username, strlen(username));
-	memcpy((*reaction).message, message, strlen(message));
+	memcpy((*reaction).user, username, strlen(username) + 1);
+	memcpy((*reaction).message, message, strlen(message) + 1);
 
 	(*chat).reactions[(*chat).num_reactions] = reaction;
 	(*chat).num_reactions++;
 	
+	return 1;
+}
+
+uint8_t edit(char* id, char* message){
+	int num = atoi(id);
+	if (num > currId){
+		return 0;
+	}
+	struct Chat* chat = messages[num];
+	memcpy((*chat).message, message, strlen(message) + 1);
 	return 1;
 }
 
@@ -218,7 +228,17 @@ void handle_post(char* path, int client){
 		message[i] = msgp[i];
 	}
 	message[i] = 0;
-	add_chat(user, message);
+	if (strlen(message) > 255 || strlen(user) > 15){
+		handle400(client, path);
+		return;
+	}
+	uint8_t t = add_chat(user, message);
+	if (t == 0){
+		handle400(client, path);
+	}
+	if (t == 2){
+		handle_404(client, path);
+	}
 	respond_with_chats(path, client);
 	//handle200(client, path);
 }
@@ -238,7 +258,7 @@ void handle_reaction(char* path, int client){
 	char* and2 = strstr(msgp, "&");
 	char* idp = strstr(and2, "id=");
 
-	if (userp == NULL || and1 == NULL || msgp == NULL || and2 == NULL || idp == NULL){
+	if (userp == NULL || and1 == NULL || msgp == NULL || and2 == NULL || idp == NULL || and1 != msgp - 1 || and2 != idp - 1){
 		handle400(client, path);
 		return;
 	}
@@ -264,13 +284,67 @@ void handle_reaction(char* path, int client){
 		id[i] = idp[i];
 	}
 	id[i] = 0;
-	if(add_reaction(user, message, id)){
+	if (strlen(message) > 15 || strlen(user) > 15){
+		handle400(client, path);
+		return;
+	}
+	uint8_t t = add_reaction(user, message, id);
+	if(t == 1){
 		respond_with_chats(path, client);
 	}
-	else{
+	else if (t == 0){
 		handle400(client, path);
 	}
+	else if (t == 2){
+		handle_404(client, path);
+	}
 	//handle200(client, path);
+}
+
+void handle_edit(char* path, int client){
+	char* start = strstr(path, "?");
+	if (start == NULL){
+		handle400(client, path);
+		return;
+	}
+	start++;
+
+	char* idp = strstr(start, "id=");
+	char* andp = strstr(idp, "&");
+	char* msgp = strstr(andp, "message=");
+
+	if (idp == NULL || andp == NULL || msgp == NULL || andp != msgp - 1){
+		handle400(client, path);
+		return;
+	}
+	idp += 3;
+	msgp += 8;
+	char message[256];
+	char id[10];
+
+	int i = 0;
+	for (; i < andp - idp && i < 10; i++){
+		id[i] = idp[i];
+	}
+	id[i] = 0;
+	i = 0;
+	for (; i < &path[strlen(path)] - msgp && i < 256; i++){
+		message[i] = msgp[i];
+	}
+	message[i] = 0;
+	if (strlen(message) > 255){
+		handle400(client, path);
+		return;
+	}
+
+	uint8_t t = edit(id, message);
+	if (t == 1){
+		respond_with_chats(path, client);
+	}
+	else if (t == 0){
+		handle400(client, path);
+	}
+	return;
 }
 
 
@@ -317,6 +391,10 @@ void handle_response(char *request, int client_sock) {
 	    reset();
 	    write(client_sock, HTTP_200_OK, strlen(HTTP_200_OK));
 	    //handle200(client_sock, path);
+	    return;
+    }
+    else if (strstr(path, "/edit") == path){
+	    handle_edit(path, client_sock);
 	    return;
     }
 

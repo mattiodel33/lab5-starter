@@ -170,6 +170,7 @@ void respond_with_chats(char* path, int client){
 		struct Chat* chat = messages[i];
 		char buff[500];
 		snprintf(buff, 475, "[#%d %s]     %s: %s\r\n", (*chat).id, (*chat).timestamp, (*chat).user, (*chat).message);
+		handle200(client, path);
 		write(client, buff, strlen(buff));
 
 		int j = 0;
@@ -219,7 +220,7 @@ void handle_post(char* path, int client){
 	message[i] = 0;
 	add_chat(user, message);
 	respond_with_chats(path, client);
-	handle200(client, path);
+	//handle200(client, path);
 }
 
 void handle_reaction(char* path, int client){

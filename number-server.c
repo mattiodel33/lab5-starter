@@ -97,8 +97,8 @@ uint8_t add_chat(char* username, char* message){
 
 	struct Chat* chatp = malloc(sizeof(struct Chat)*2);
 	(*chatp).id = currId;
-	memcpy((*chatp).user, username, strlen(username) + 1);
-	memcpy((*chatp).message, message, strlen(message) + 1);
+	memcpy((*chatp).user, username, strlen(username));
+	memcpy((*chatp).message, message, strlen(message));
 	memcpy((*chatp).timestamp, buffer, strlen(buffer));
 	(*chatp).num_reactions = 0;
 
@@ -125,8 +125,8 @@ uint8_t add_reaction(char* username, char* message, char* id){
 	}
 
 	struct Reaction* reaction = malloc(sizeof(struct Reaction)*2);
-	memcpy((*reaction).user, username, strlen(username) + 1);
-	memcpy((*reaction).message, message, strlen(message) + 1);
+	memcpy((*reaction).user, username, strlen(username));
+	memcpy((*reaction).message, message, strlen(message));
 
 	(*chat).reactions[(*chat).num_reactions] = reaction;
 	(*chat).num_reactions++;
@@ -140,7 +140,7 @@ uint8_t edit(char* id, char* message){
 		return 0;
 	}
 	struct Chat* chat = messages[num];
-	memcpy((*chat).message, message, strlen(message) + 1);
+	memcpy((*chat).message, message, strlen(message));
 	return 1;
 }
 

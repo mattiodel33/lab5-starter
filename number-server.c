@@ -166,11 +166,11 @@ void handlepath(char* path){
 
 void respond_with_chats(char* path, int client){
 	int i = 1;
+	write(client, HTTP_200_OK, strlen(HTTP_200_OK));
 	for (; i <= currId; i++){
 		struct Chat* chat = messages[i];
 		char buff[500];
 		snprintf(buff, 475, "[#%d %s]     %s: %s\r\n", (*chat).id, (*chat).timestamp, (*chat).user, (*chat).message);
-		handle200(client, path);
 		write(client, buff, strlen(buff));
 
 		int j = 0;
@@ -315,6 +315,7 @@ void handle_response(char *request, int client_sock) {
 		    return;
 	    }
 	    reset();
+	    write(client_sock, HTTP_200_OK, strlen(HTTP_200_OK));
 	    //handle200(client_sock, path);
 	    return;
     }

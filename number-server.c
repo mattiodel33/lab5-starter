@@ -58,11 +58,11 @@ void handle_404(int client_sock, char *path)  {
     write(client_sock, HTTP_404_NOT_FOUND, strlen(HTTP_404_NOT_FOUND));
     write(client_sock, response_buff, strlen(response_buff));
 }
-void handle400(int client_sock, char *path){
+void handle400(int client_sock, char *path, char* error){
 	printf("SERVER LOG: Got bad request \"%s\"\n", path);
 
 	char response_buff[BUFFER_SIZE];
-	snprintf(response_buff, BUFFER_SIZE, "400:\r\nBad request \"%s\"\r\n", path);
+	snprintf(response_buff, BUFFER_SIZE, "400:\r\nBad request \"%s: %s\"\r\n", path, error);
 
 	write(client_sock, HTTP_BAD_RESPONSE, strlen(HTTP_BAD_RESPONSE));
 	write(client_sock, response_buff, strlen(response_buff));
@@ -197,7 +197,7 @@ void handle_post(char* path, int client){
 	handlepath(path);
 	char* start = strstr(path, "?");
 	if (start == NULL){
-		handle400(client, path);
+		handle400(client, path, "no ?");
 		return;
 	}
 	start++;
@@ -206,11 +206,11 @@ void handle_post(char* path, int client){
 	char* msgp = strstr(userp, "message=");
 	char* andp = strstr(userp, "&");
 	if (userp == NULL || msgp == NULL || andp == NULL){
-		handle400(client, path);
+		handle400(client, path, "missing params");
 		return;
 	}
 	if (userp > msgp || andp < userp || andp != msgp - 1){
-		handle400(client, path);
+		handle400(client, path, "bad order");
 		return;
 	}
 	userp += 5;
@@ -229,12 +229,12 @@ void handle_post(char* path, int client){
 	}
 	message[i] = 0;
 	if (strlen(message) > 255 || strlen(user) > 15){
-		handle400(client, path);
+		handle400(client, path, "too long");
 		return;
 	}
 	uint8_t t = add_chat(user, message);
 	if (t == 0){
-		handle400(client, path);
+		handle400(client, path, "none");
 	}
 	if (t == 2){
 		handle_404(client, path);
@@ -247,7 +247,7 @@ void handle_reaction(char* path, int client){
 	handlepath(path);
 	char* start = strstr(path, "?");
 	if (start == NULL){
-		handle400(client, path);
+		handle400(client, path, "no ?");
 		return;
 	}
 	start++;
@@ -259,7 +259,7 @@ void handle_reaction(char* path, int client){
 	char* idp = strstr(and2, "id=");
 
 	if (userp == NULL || and1 == NULL || msgp == NULL || and2 == NULL || idp == NULL || and1 != msgp - 1 || and2 != idp - 1){
-		handle400(client, path);
+		handle400(client, path, "missing params");
 		return;
 	}
 	userp += 5;
@@ -285,7 +285,7 @@ void handle_reaction(char* path, int client){
 	}
 	id[i] = 0;
 	if (strlen(message) > 15 || strlen(user) > 15){
-		handle400(client, path);
+		handle400(client, path, "too long");
 		return;
 	}
 	uint8_t t = add_reaction(user, message, id);
@@ -293,7 +293,7 @@ void handle_reaction(char* path, int client){
 		respond_with_chats(path, client);
 	}
 	else if (t == 0){
-		handle400(client, path);
+		handle400(client, path, "bad id");
 	}
 	else if (t == 2){
 		handle_404(client, path);
@@ -305,7 +305,7 @@ void handle_edit(char* path, int client){
 	handlepath(path);
 	char* start = strstr(path, "?");
 	if (start == NULL){
-		handle400(client, path);
+		handle400(client, path, "no ?");
 		return;
 	}
 	start++;
@@ -315,7 +315,7 @@ void handle_edit(char* path, int client){
 	char* msgp = strstr(andp, "message=");
 
 	if (idp == NULL || andp == NULL || msgp == NULL || andp != msgp - 1){
-		handle400(client, path);
+		handle400(client, path, "missing params");
 		return;
 	}
 	idp += 3;
@@ -334,7 +334,7 @@ void handle_edit(char* path, int client){
 	}
 	message[i] = 0;
 	if (strlen(message) > 255){
-		handle400(client, path);
+		handle400(client, path, "too long");
 		return;
 	}
 
@@ -343,7 +343,7 @@ void handle_edit(char* path, int client){
 		respond_with_chats(path, client);
 	}
 	else if (t == 0){
-		handle400(client, path);
+		handle400(client, path, "bad id");
 	}
 	return;
 }
@@ -377,7 +377,7 @@ void handle_response(char *request, int client_sock) {
     }
     else if (strstr(path, "/chats") == path){
 	    if (strlen(path) != 6){
-		    handle400(client_sock, path);
+		    handle400(client_sock, path, "chats not alone");
 		    return;
 	    }
 	    respond_with_chats(path, client_sock);
@@ -386,7 +386,7 @@ void handle_response(char *request, int client_sock) {
     }
     else if (strstr(path, "/reset") == path){
 	    if (strlen(path) != 6){
-		    handle400(client_sock, path);
+		    handle400(client_sock, path, "reset not alone");
 		    return;
 	    }
 	    write(client_sock, HTTP_200_OK, strlen(HTTP_200_OK));

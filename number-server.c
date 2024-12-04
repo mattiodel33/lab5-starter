@@ -350,7 +350,14 @@ void handle_edit(char* path, int client){
 		respond_with_chats(path, client);
 	}
 	else if (t == 0){
-		handle400(client, path, "bad id");
+		char cId[10];
+		sprintf(cId, "%d", currId);
+		char error[strlen(id) + strlen(cId) + 2];
+		memcpy(error, id, strlen(id));
+		error[strlen(id)] = '>';
+		memcpy(error + strlen(id) + 1, cId, strlen(cId));
+		error[strlen(id) + strlen(cId) + 1] = 0;
+		handle400(client, path, error);
 	}
 	return;
 }

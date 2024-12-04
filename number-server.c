@@ -45,7 +45,7 @@ struct Chat{
 	struct Reaction* reactions[101];
 };
 
-struct Chat* messages[100000];
+struct Chat* messages[100001];
 
 void handle_404(int client_sock, char *path)  {
     printf("SERVER LOG: Got request for unrecognized path \"%s\"\n", path);
@@ -95,7 +95,7 @@ uint8_t add_chat(char* username, char* message){
 		message[255] = 0;
 	}
 
-	struct Chat* chatp = malloc(14000);
+	struct Chat* chatp = malloc(sizeof(struct Chat)*2);
 	(*chatp).id = currId;
 	memcpy((*chatp).user, username, strlen(username) + 1);
 	memcpy((*chatp).message, message, strlen(message) + 1);
@@ -124,7 +124,7 @@ uint8_t add_reaction(char* username, char* message, char* id){
 		message[15] = 0;
 	}
 
-	struct Reaction* reaction = malloc(64);
+	struct Reaction* reaction = malloc(sizeof(struct Reaction)*2);
 	memcpy((*reaction).user, username, strlen(username) + 1);
 	memcpy((*reaction).message, message, strlen(message) + 1);
 
@@ -350,7 +350,7 @@ void handle_edit(char* path, int client){
 
 
 void handle_response(char *request, int client_sock) {
-    char path[256];
+    char path[1001];
 
     printf("\nSERVER LOG: Got request: \"%s\"\n", request);
 

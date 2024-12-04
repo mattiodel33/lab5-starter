@@ -293,7 +293,12 @@ void handle_reaction(char* path, int client){
 		respond_with_chats(path, client);
 	}
 	else if (t == 0){
-		handle400(client, path, "bad id");
+		char error[strlen(id) + strlen(currId) + 2];
+		memcpy(error, id, strlen(id));
+		error[strlen(id)] = '>';
+		memcpy(error + strlen(id) + 1, currId, strlen(currId));
+		error[strlen(id) + strlen(currId) + 1] = 0;
+		handle400(client, path, error);
 	}
 	else if (t == 2){
 		handle_404(client, path);

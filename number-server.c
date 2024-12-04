@@ -113,7 +113,7 @@ uint8_t add_reaction(char* username, char* message, char* id){
 		return 0;
 	}
 	struct Chat* chat = messages[num];
-	if ((*chat).num_reactions > 100){
+	if ((*chat).num_reactions > 99){
 		return 2;
 	}
 	
@@ -203,9 +203,13 @@ void handle_post(char* path, int client){
 	start++;
 
 	char* userp = strstr(start, "user=");
+	if (userp == NULL){
+		handle400(client, path, "missing params");
+		return;
+	}
 	char* msgp = strstr(userp, "message=");
 	char* andp = strstr(userp, "&");
-	if (userp == NULL || msgp == NULL || andp == NULL){
+	if (msgp == NULL || andp == NULL){
 		handle400(client, path, "missing params");
 		return;
 	}
@@ -255,12 +259,28 @@ void handle_reaction(char* path, int client){
 	start++;
 
 	char* userp = strstr(start, "user=");
+	if (userp == NULL){
+		handle400(client, path, "missing params");
+		return;
+	}
 	char* and1 = strstr(userp, "&");
+	if (and1 == NULL){
+		handle400(client, path, "missing params");
+		return;
+	}
 	char* msgp = strstr(and1, "message=");
+	if (msgp == NULL){
+		handle400(client, path, "missing params");
+		return;
+	}
 	char* and2 = strstr(msgp, "&");
+	if (and2 == NULL){
+		handle400(client, path, "missing params");
+		return;
+	}
 	char* idp = strstr(and2, "id=");
 
-	if (userp == NULL || and1 == NULL || msgp == NULL || and2 == NULL || idp == NULL || and1 != msgp - 1 || and2 != idp - 1){
+	if (idp == NULL || and1 != msgp - 1 || and2 != idp - 1){
 		handle400(client, path, "missing params");
 		return;
 	}
@@ -322,10 +342,18 @@ void handle_edit(char* path, int client){
 	start++;
 
 	char* idp = strstr(start, "id=");
+	if (idp == NULL){
+		handle400(client, path, "missing params");
+		return;
+	}
 	char* andp = strstr(idp, "&");
+	if (andp == NULL){
+		handle400(client, path, "missing params");
+		return;
+	}
 	char* msgp = strstr(andp, "message=");
 
-	if (idp == NULL || andp == NULL || msgp == NULL || andp != msgp - 1){
+	if (msgp == NULL || andp != msgp - 1){
 		handle400(client, path, "missing params");
 		return;
 	}
@@ -352,6 +380,7 @@ void handle_edit(char* path, int client){
 	uint8_t t = edit(id, message);
 	if (t == 1){
 		respond_with_chats(path, client);
+		return;
 	}
 	else if (t == 0){
 		char cId[10];
@@ -362,6 +391,7 @@ void handle_edit(char* path, int client){
 		memcpy(error + strlen(id) + 1, cId, strlen(cId));
 		error[strlen(id) + strlen(cId) + 1] = 0;
 		handle400(client, path, error);
+		return;
 	}
 	return;
 }

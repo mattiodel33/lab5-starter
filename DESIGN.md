@@ -15,3 +15,19 @@ A problem resulting from this implementation is that more complex code would be 
 regardless of the order the user uses. This results in more unreadable/complicated code and also more processing time
 due to more cases that need to be handled. In my implementation specifically I would need to consider the cases where
 the user does not put the request in the order as specified by the PA writeup.
+
+3.) (RESUBMIT) One good thing about this alternate design is that it would be much easier to write all of the chats and reactions
+to the user. Rather than having to access multiple parts of a struct you just print out the char pointer to the chat.
+A bad thing about this alternate design however is that it is much harder to access specific parts of the chat.
+Unlike having a struct, if you only have a single string you would either need to keep track of the exact indices
+that each part of the chat starts at (id, user, message, etc.) for a static memory allocation design which would be tedious, or
+you would need to have some way of keeping track of each index and constantly update them a dynamic memory allocation design,
+which would also be tedious to program and would possibly require more memory.
+
+4.) (RESUBMIT) This design would make it harder to add the /edit feature as for either the static or dynamic memory allocation design,
+you would need to know the index of where the actual message starts (you wouldn't need the index of the id, since those are
+being kept track of by the array of char pointers) and then you would have to change the string. You could also just create
+a new string, but then you would need to find all of the other parts of information to copy them over too. For the dynamic
+memory allocation design specifically it would be much harder to add the feature, as after changing message you would need
+to shift the rest of the chat (only reactions follow the message so you'd only have to shift those), and then update their
+respective indices.

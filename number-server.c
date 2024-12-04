@@ -33,19 +33,19 @@ int hex(char c1, char c2){
 }
 
 struct Reaction{
-	char user[64];
-	char message[32];
+	char user[16];
+	char message[16];
 };
 struct Chat{
 	uint32_t id;
-	char user[64];
+	char user[16];
 	char message[256];
 	char timestamp[100];
 	uint8_t num_reactions;
 	struct Reaction* reactions[101];
 };
 
-struct Chat* messages[1000];
+struct Chat* messages[100000];
 
 void handle_404(int client_sock, char *path)  {
     printf("SERVER LOG: Got request for unrecognized path \"%s\"\n", path);
@@ -88,17 +88,17 @@ uint8_t add_chat(char* username, char* message){
 	char buffer[100];
 	strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm_info);
 
-	if (strlen(username) > 64){
-		username[64] = 0;
+	if (strlen(username) > 15){
+		username[15] = 0;
 	}
-	if (strlen(message) > 256){
-		message[256] = 0;
+	if (strlen(message) > 255){
+		message[255] = 0;
 	}
 
 	struct Chat* chatp = malloc(sizeof(struct Chat)*2);
 	(*chatp).id = currId;
-	memcpy((*chatp).user, username, strlen(username));
-	memcpy((*chatp).message, message, strlen(message));
+	memcpy((*chatp).user, username, strlen(username) + 1);
+	memcpy((*chatp).message, message, strlen(message) + 1);
 	memcpy((*chatp).timestamp, buffer, strlen(buffer));
 	(*chatp).num_reactions = 0;
 
@@ -117,16 +117,16 @@ uint8_t add_reaction(char* username, char* message, char* id){
 		return 2;
 	}
 	
-	if (strlen(username) > 64){
-		username[64] = 0;
+	if (strlen(username) > 15){
+		username[15] = 0;
 	}
-	if (strlen(message) > 32){
-		message[32] = 0;
+	if (strlen(message) > 15){
+		message[15] = 0;
 	}
 
 	struct Reaction* reaction = malloc(sizeof(struct Reaction)*2);
-	memcpy((*reaction).user, username, strlen(username));
-	memcpy((*reaction).message, message, strlen(message));
+	memcpy((*reaction).user, username, strlen(username) + 1);
+	memcpy((*reaction).message, message, strlen(message) + 1);
 
 	(*chat).reactions[(*chat).num_reactions] = reaction;
 	(*chat).num_reactions++;
@@ -140,7 +140,7 @@ uint8_t edit(char* id, char* message){
 		return 0;
 	}
 	struct Chat* chat = messages[num];
-	memcpy((*chat).message, message, strlen(message));
+	memcpy((*chat).message, message, strlen(message) + 1);
 	return 1;
 }
 
@@ -215,11 +215,11 @@ void handle_post(char* path, int client){
 	}
 	userp += 5;
 	msgp += 8;
-	char user[64];
+	char user[16];
 	char message[256];
 
 	int i = 0;
-	for (; i < andp - userp && i < 64; i++){
+	for (; i < andp - userp && i < 16; i++){
 		user[i] = userp[i];
 	}
 	user[i] = 0;
@@ -265,17 +265,17 @@ void handle_reaction(char* path, int client){
 	userp += 5;
 	msgp += 8;
 	idp += 3;
-	char user[64];
-	char message[256];
+	char user[16];
+	char message[16];
 	char id[10];
 	
 	int i = 0;
-	for (; i < and1 - userp && i < 64; i++){
+	for (; i < and1 - userp && i < 16; i++){
 		user[i] = userp[i];
 	}
 	user[i] = 0;
 	i = 0;
-	for (; i < and2 - msgp && i < 256; i++){
+	for (; i < and2 - msgp && i < 16; i++){
 		message[i] = msgp[i];
 	}
 	message[i] = 0;
@@ -302,6 +302,7 @@ void handle_reaction(char* path, int client){
 }
 
 void handle_edit(char* path, int client){
+	handlepath(path);
 	char* start = strstr(path, "?");
 	if (start == NULL){
 		handle400(client, path);
@@ -388,13 +389,13 @@ void handle_response(char *request, int client_sock) {
 		    handle400(client_sock, path);
 		    return;
 	    }
-	    reset();
 	    write(client_sock, HTTP_200_OK, strlen(HTTP_200_OK));
+	    reset();
 	    //handle200(client_sock, path);
 	    return;
     }
     else if (strstr(path, "/edit") == path){
-	    //handle_edit(path, client_sock);
+	    handle_edit(path, client_sock);
 	    return;
     }
 

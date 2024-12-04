@@ -235,9 +235,11 @@ void handle_post(char* path, int client){
 	uint8_t t = add_chat(user, message);
 	if (t == 0){
 		handle400(client, path, "none");
+		return;
 	}
 	if (t == 2){
 		handle_404(client, path);
+		return;
 	}
 	respond_with_chats(path, client);
 	//handle200(client, path);
@@ -301,9 +303,11 @@ void handle_reaction(char* path, int client){
 		memcpy(error + strlen(id) + 1, cId, strlen(cId));
 		error[strlen(id) + strlen(cId) + 1] = 0;
 		handle400(client, path, error);
+		return;
 	}
 	else if (t == 2){
 		handle_404(client, path);
+		return;
 	}
 	//handle200(client, path);
 }

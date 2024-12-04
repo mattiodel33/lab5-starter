@@ -99,7 +99,7 @@ uint8_t add_chat(char* username, char* message){
 	(*chatp).id = currId;
 	memcpy((*chatp).user, username, strlen(username) + 1);
 	memcpy((*chatp).message, message, strlen(message) + 1);
-	memcpy((*chatp).timestamp, buffer, strlen(buffer));
+	memcpy((*chatp).timestamp, buffer, strlen(buffer) + 1);
 	(*chatp).num_reactions = 0;
 
 	messages[currId] = chatp;

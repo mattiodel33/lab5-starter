@@ -138,7 +138,7 @@ uint8_t add_reaction(char* username, char* message, char* id){
 	
 	return 1;
 }
-/*
+
 uint8_t edit(char* id, char* message){
 	int num = atoi(id);
 	if (num > currId){
@@ -149,7 +149,7 @@ uint8_t edit(char* id, char* message){
 	(*chat).message[strlen(message)] = 0;
 	return 1;
 }
-*/
+
 void reset(){
 	int i = 1;
 	for (; i <= currId; i++){
@@ -337,7 +337,7 @@ void handle_reaction(char* path, int client){
 	}
 	//handle200(client, path);
 }
-/*
+
 void handle_edit(char* path, int client){
 	handlepath(path);
 	char* start = strstr(path, "?");
@@ -402,7 +402,7 @@ void handle_edit(char* path, int client){
 	return;
 }
 
-*/
+
 void handle_response(char *request, int client_sock) {
     char path[1001];
 
@@ -449,7 +449,7 @@ void handle_response(char *request, int client_sock) {
 	    return;
     }
     else if (strstr(path, "/edit") == path){
-	    //handle_edit(path, client_sock);
+	    handle_edit(path, client_sock);
 	    return;
     }
 
